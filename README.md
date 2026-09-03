@@ -1,30 +1,42 @@
-# A11y LLM Evaluation Harness and Dataset
+# Accessible AI Code
 
-This is a research project to evaluate how well various LLM models generate accessible HTML content.
+This is a project to evaluate how well Large Language Models (LLM) generate accessible HTML code.
 
 ## Problem
-LLMs currently generate code with accessibility bugs, resulting in blockers for people with disabilities and costly re-work and fixes downstream. 
+
+LLM currently generate code with accessibility bugs, resulting in blockers for people with disabilities and costly code refactoring downstream.
 
 ## Goal
-Create a public test suite which can be used to benchmark how well various LLMs generates accessible HTML code. Eventually, it could also be used to help train models to generate more accessible code by default.
+
+Create a public test harness to benchmark how well LLM generate accessible HTML code.
+
+Eventually, it could be used to train LLM to produce more accessible HTML code.
 
 ## Methodology
-- Each test case contains a prompt to generate an HTML page to demonstrate a specific pattern or component.
-- All generations (control, instruction-set variants, and skills) are agentic sessions powered by the [GitHub Copilot SDK](https://pypi.org/project/github-copilot-sdk/) running inside a Docker sandbox. The agent can call built-in tools (e.g. file writes, shell commands) and iteratively refine its output.
-- **Control** uses the test prompt with no custom accessibility instructions, measuring baseline behavior. **Instruction-set variants** add custom instructions (delivered via `.github/copilot-instructions.md`). **Skills** use multi-turn conversations with explicit turn prompts and a mounted skill directory.
-- The resulting artifact directory is served over localhost HTTP and rendered in a real browser using Playwright (Chromium). Tests are executed against this rendered page.
-- The HTML is evaluated against axe-core, one of the most popular automated accessibility testing engines.
-- The HTML is also evaluated against a manually defined set of assertions, customized for the specific test case. This allows for more robust testing than just using axe-core.
-- Tests only pass if zero axe-core WCAG failures are found AND all *requirement* assertions pass. Best Practice (BP) assertion failures do not fail the test but are tracked separately.
+
+There are multiple test cases. Each test case consists of a prompt that generates an HTML page that demonstrates a particular pattern or component.
+
+Generations (control, instruction-set variants, and skills) are agentic sessions powered by the [GitHub Copilot SDK](https://pypi.org/project/github-copilot-sdk/), running inside a Docker sandbox. The agent can call built-in tools like file writes or shell commands, and iteratively refine its output.
+
+* **Control** uses the test prompt with no custom accessibility instructions, measuring baseline behavior
+* **Instruction-set variants** add custom instructions (delivered via `.github/copilot-instructions.md`)
+* **Skills** use multi-turn conversations with explicit turn prompts and a mounted skill directory.
+
+The resulting artifact directory is served over localhost HTTP and rendered in a real browser using Playwright (Chromium). Tests are executed against this rendered page.
+
+The HTML is evaluated using the axe-core automated testing engine. It's also evaluated using a set of assertions, customized for the specific test case.
+
+Tests pass only if axe-core identifies 0 WCAG conformance issues **and** all assertions pass. Best Practice (BP) assertion failures do not cause the test to fail, but they are tracked separately.
 
 ## Features
-- Python orchestrator built on the [GitHub Copilot SDK](https://pypi.org/project/github-copilot-sdk/)
-- Every generation is an agentic Copilot session running inside a Docker sandbox we own (`config/copilot_sandbox/`)
-- Node.js Playwright + axe-core evaluation
-- Per-test prompts & injected JS assertions
-- HTML report summarizing performance
-- Token + cost tracking (tokens in/out/total, per-generation cost, aggregated per model)
-- Multi-sample generation with pass@k metrics (probability at least one passing generation in k draws)
+
+* Python orchestrator built on the [GitHub Copilot SDK](https://pypi.org/project/github-copilot-sdk/)
+* Every generation is an agentic Copilot session running inside a Docker sandbox we own (`config/copilot_sandbox/`)
+* Node.js Playwright + axe-core evaluation
+* Per-test prompts & injected JS assertions
+* HTML report summarizing performance
+* Token + cost tracking (tokens in/out/total, per-generation cost, aggregated per model)
+* Multi-sample generation with pass@k metrics (probability at least one passing generation in k draws)
 - Per-run Copilot session JSONL logs under `<run_dir>/copilot_logs/`
 
 ## Sandbox & authentication
@@ -34,24 +46,25 @@ Docker container (built from `config/copilot_sandbox/Dockerfile`). The
 first `run` builds the image and brings the container up; subsequent runs
 reuse it.
 
-- **Docker is a hard dependency.** Install Docker Desktop (or Docker
+* **Docker is a hard dependency.** Install Docker Desktop (or Docker
   Engine + Compose v2) before running.
-- **Authentication uses your existing dev login.** The harness
+* **Authentication uses your existing dev login.** The harness
   uses a named Docker volume (`copilot-auth`) so credentials stay inside
   the container and are not exposed to the host. On first run the harness
   verifies CLI connectivity and — if needed — runs `copilot login`
   interactively in your terminal; the resulting token persists across
   container rebuilds. `GH_TOKEN` / `GITHUB_TOKEN` environment variables
   are forwarded per-`docker exec` as a CI/headless fallback.
-- **BYOK keys** flow through environment variables (`ANTHROPIC_API_KEY`,
+* **BYOK keys** flow through environment variables (`ANTHROPIC_API_KEY`,
   `OPENAI_API_KEY`, `AZURE_API_KEY`, `AZURE_API_BASE`,
   `AZURE_API_VERSION`) and are forwarded into the container per session.
 - Override the workspace mount with `COPILOT_WORKSPACE` (host path mounted
   as `/workspace`, which must contain any skill directories you reference).
-- Stop the container with
+* Stop the container with
   `docker compose -f config/copilot_sandbox/compose.yaml down`.
 
 ## Sampling & pass@k Metrics
+
 You can request multiple independent generations ("samples") per (test, model). This enables computation of pass@k metrics similar to code evaluation benchmarks.
 
 ### CLI Usage
@@ -85,9 +98,9 @@ Tips:
 
 You can optionally benchmark multiple **custom instruction sets** against the **control** using the same test cases.
 
-- **Control**: the base system prompt with **no custom instructions**.
-- **Each instruction set is run separately** (instruction sets are not combined).
-- Instruction sets can use a **different sample count** than the control.
+* **Control**: the base system prompt with **no custom instructions**.
+* **Each instruction set is run separately** (instruction sets are not combined).
+* Instruction sets can use a **different sample count** than the control.
 
 Step 0: Start from the default instruction sets file
 
@@ -154,7 +167,6 @@ Report:
 - The main tables reflect the **control** results.
 - Each instruction-set sample card shows a transcript preview and links to the saved conversation JSON.
 - If variants are present, the report includes an **“Instruction Benchmarks (vs Control)”** section with side-by-side metrics and deltas.
-
 
 ### Skills benchmarking
 
@@ -246,15 +258,14 @@ This produces, in a single run directory:
 - `raw_skills/<skill_id>/…` — skill turn directories plus one stitched `.agent.json` per sample
 - A report with three comparison sections: Control summary, **Instruction Benchmarks (vs Control)**, and **Skills (vs Control)**.
 
-
 ## Quick Start
 
 ### Prerequisites
 
-- **Python 3.11+** and **Node.js 18+**
-- **Docker** — the generation step runs a Copilot sandbox container.
+* **Python 3.11+** and **Node.js 18+**
+* **Docker** — the generation step runs a Copilot sandbox container.
   Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (macOS/Windows) or Docker Engine (Linux) and make sure `docker` is on your PATH.
-- **GitHub CLI** — used to authenticate the Copilot sandbox.
+* **GitHub CLI** — used to authenticate the Copilot sandbox.
   Install with `brew install gh` (macOS), `winget install GitHub.cli` (Windows), or see [cli.github.com](https://cli.github.com). Then run:
   ```
   gh auth login
@@ -376,26 +387,20 @@ If `type` is omitted it defaults to `R` for backward compatibility. The HTML rep
 The `fn` callback can also return `{ status: "pass" | "fail" | "na", message?: string }` for assertions that may not be applicable to a given page.
 
 ## Report
+
 Generated at `runs/<timestamp>/index.html` with:
 - Summary stats per model
 - Detailed per model/test breakdown
-- Axe violations
+- Axe issues
 - Assertions & statuses
 - Pass@k aggregate table and per-sample cards when multiple samples are collected
 
 ## Contributing
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit [Contributor License Agreements](https://cla.opensource.microsoft.com).
+Contributions are welcome. If you contribute to an Accessible AI Code benchmark project, you pledge to follow our codes of conduct:
 
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+* [Code of Conduct](https://github.com/accessible-ai-code-benchmark/docs/blob/main/policies/code-of-conduct.md)
+* [AI Code of Conduct](https://github.com/accessible-ai-code-benchmark/docs/blob/main/policies/ai-code-of-conduct.md)
 
 ## Trademarks
 
