@@ -55,7 +55,9 @@ const describeLink = (link, index) => {
 
 module.exports.run = async ({ page, assert, utils }) => {
 
+    // isEitherImplicitOrExplicitLink - returns true if the element has either an implicit or explicit role of link, false otherwise
     const isEitherImplicitOrExplicitLink = async (linkLocator) => {
+      // Evaluates the locator in the page context to see if it has a role attribute, or if it is a native link (a element with href)
       return await linkLocator.evaluate((el) => {
         const explicitRole = (el.getAttribute('role') || '').trim().toLowerCase();
         const isNativeLink = el.matches('a');
@@ -75,6 +77,7 @@ module.exports.run = async ({ page, assert, utils }) => {
       })
     };
 
+    // filterInvalidRoles - loops over links to return an array of links that have a valid role of link
     const filterInvalidRoles = async (links) => {
       let filteredLinks = [];
 
