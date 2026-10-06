@@ -61,6 +61,10 @@ module.exports.run = async ({ page, assert, utils }) => {
       return await linkLocator.evaluate((el) => {
         const explicitRole = (el.getAttribute('role') || '').trim().toLowerCase();
         const isNativeLink = el.matches('a');
+        // If it uses a custom element with role="link", return that it has an explicit role of link
+        if (explicitRole === 'link') {
+            return true;
+        }
         // If it uses a native a element, check if it has a href attribute, which is required for it to have an implicit role of link
         if (isNativeLink) {
             const hrefValue = el.getAttribute('href');
@@ -70,21 +74,21 @@ module.exports.run = async ({ page, assert, utils }) => {
               return true;
             }
         }
-        // If it uses a custom element with role="link", return that it has an explicit role of link
-        if (explicitRole === 'link') {
-            return true;
-        }
       })
     };
 
-    // filterInvalidRoles - loops over links to return an array of links that have a valid role of link
-    const filterInvalidRoles = async (links) => {
+    // evaluateValidRoles - loops over links to return an array of links that have a valid role of link
+    const evaluateValidRoles = async (links) => {
       let filteredLinks = [];
 
       for (const [index, link] of links.entries()) {
           const hasValidRole = await isEitherImplicitOrExplicitLink(link.locator);
           // If there is no valid role, add the link description to the invalidLinks array
           if (hasValidRole) {
+              link.validRole = true;
+              filteredLinks.push(link);
+          } else {
+              link.validRole = false;
               filteredLinks.push(link);
           }
       }
@@ -193,11 +197,14 @@ module.exports.run = async ({ page, assert, utils }) => {
     // Check that each link has a valid role (R - WCAG 4.1.2)
     await assert("Each link has a valid role", async () => {
         const links = finalDiscovery.links;
+        
         // If there are no links found, return a failure message
         if (links.length === 0) {
             return { pass: false, message: 'No links found in scope' };
         }
+        
         const invalidLinks = [];
+        
         // Loop through each link and check if it has a valid role
         for (const [index, link] of links.entries()) {
             const hasValidRole = await isEitherImplicitOrExplicitLink(link.locator);
@@ -206,10 +213,12 @@ module.exports.run = async ({ page, assert, utils }) => {
                 invalidLinks.push(describeLink(link, index));
             }
         }
+        
         // If there are no invalid links, return a pass message
         if (invalidLinks.length === 0) {
             return { pass: true, message: 'All links expose valid link roles' };
         }
+        
         // Otherwise, return a failure message with the list of invalid links
         return { pass: false, message: `Invalid link role on ${summarizeList(invalidLinks)}` };
     });
@@ -217,24 +226,26 @@ module.exports.run = async ({ page, assert, utils }) => {
     // Check that each link has an accessible name (R - WCAG 4.1.2)
     await assert("Each link has an accessible name", async () => {
         const links = finalDiscovery.links;
+        
         // If there are no links found, return a failure message
         if (links.length === 0) {
             return { pass: false, message: 'No links found in scope' };
         }
 
-        let filteredLinks = await filterInvalidRoles(links);
+        let filteredLinks = await evaluateValidRoles(links);
 
         // Map through the links and create an array of descriptions for links that do not have an accessible name
         const unnamedLinks = filteredLinks
           .map((link, index) => {
             if (link.name && link.name.trim()) return null;
+            if (!link.validRole) return null;
             return describeLink(link, index);
           })
           .filter(Boolean);
         
         // If there are no unnamed links, return a pass message
         if (unnamedLinks.length === 0) {
-            return { pass: true, message: `All ${links.length} links have accessible names ${summarizeList(unnamedLinks)}` };
+            return { pass: true, message: `All links have accessible names ${summarizeList(unnamedLinks)}` };
         }
         // Otherwise, return a failure message with the list of unnamed links
         return { pass: false, message: `Missing accessible names for ${summarizeList(unnamedLinks)}` };
@@ -248,7 +259,7 @@ module.exports.run = async ({ page, assert, utils }) => {
             return { pass: false, message: 'No links found in scope' };
         }
 
-        let filteredLinks = await filterInvalidRoles(links);
+        let filteredLinks = await evaluateValidRoles(links);
 
         // Normalize for comparison:
         // - strip emoji pictographics (non-speakable for voice input)
@@ -277,7 +288,7 @@ module.exports.run = async ({ page, assert, utils }) => {
         // Loop through each link and check if the visible label is included in the accessible name
         for (const [index, link] of filteredLinks.entries()) {
             const vl = link.textContent;
-            if (!vl) {
+            if (!vl || link.validRole === false) {
               // no visible text label  
               continue;
             }
@@ -309,6 +320,41 @@ module.exports.run = async ({ page, assert, utils }) => {
         }
 
         return { status: results.status(), message: results.getMessage() };
+    });
+
+    await assert("Disabled links are disabled correctly", async () => {
+      const links = finalDiscovery.links;
+
+      // If there are no links found, return a failure message
+      if (links.length === 0) {
+          return { pass: false, message: 'No links found in scope' };
+      }
+
+      let noOfDisabledLinks = 0;
+      const invalidDisabledLinks = [];
+
+      // Loop through each link and check if it has a valid role
+      for (const [index, link] of links.entries()) {
+          if (!link.disabled) continue;
+          noOfDisabledLinks++;
+
+          const disabledWithDisabledAttr = await link.locator.evaluate((el) => el.hasAttribute('disabled'));
+          const disabledWithAriaDisabled = await link.locator.evaluate((el) => el.getAttribute('aria-disabled') === 'true');
+
+          if (disabledWithDisabledAttr) {
+            invalidDisabledLinks.push(describeLink(link, index));
+          }
+      }
+
+      // If there are no invalid links, return a pass message
+      if (noOfDisabledLinks === 0) {
+        return { pass: false, message: 'No disabled links found in scope' };
+      } else if (invalidDisabledLinks.length === 0) {
+        return { pass: true, message: 'All disabled links are correctly disabled' };
+      }
+      
+      // Otherwise, return a failure message with the list of invalid links
+      return { pass: false, message: `Invalid disabled link on ${summarizeList(invalidDisabledLinks)}` };
     });
 
     // Check that each link can be used with only a keyboard (R - WCAG 2.1.1)

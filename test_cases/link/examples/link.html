@@ -33,28 +33,38 @@
     </a>
   </section>
 
+  <section class="example">
+    <span class="label">Working: link disabled correctly</span>
+    <a role="link" aria-disabled="true">Back 4</a>
+  </section>
+
   <hr>
 
   <h2>Purposefully broken examples</h2>
 
   <section class="example broken">
     <span class="label">Broken: anchor missing href (not a real link)</span>
-    <a>Back 4</a>
+    <a>Back 5</a>
   </section>
 
   <section class="example broken">
     <span class="label">Broken: custom element with role="link" but not focusable</span>
-    <div role="link">Back 5</div>
+    <div role="link">Back 6</div>
   </section>
 
   <section class="example broken">
     <span class="label">Broken: custom element with role="link" and tabindex but no keyboard activation handling</span>
-    <div role="link" tabindex="0">Back 6</div>
+    <div role="link" tabindex="0">Back 7</div>
   </section>
 
   <section class="example broken">
     <span class="label">Broken: anchor with empty href (may be treated like a placeholder)</span>
-    <a href="">Back 7</a>
+    <a href="">Back 8</a>
+  </section>
+
+  <section class="example broken">
+    <span class="label">Broken: link disabled incorrectly</span>
+    <a href="#" disabled>Back 9</a>
   </section>
 
   <section class="example broken">
@@ -68,15 +78,13 @@
 
   <section class="example broken">
     <span class="label">Broken: visually hidden link text, not useful alone</span>
-    <a href="javascript:history.back()"><span style="position:absolute;left:-9999px;">Back 9</span></a>
+    <a href="javascript:history.back()"><span style="position:absolute;left:-9999px;">Back 11</span></a>
   </section>
 
 
   <section class="example broken">
     <span class="label">Broken: link's accessible name overridden with aria-label</span>
-    <a href="#" aria-label="Test test">
-      Back 9
-    </a>
+    <a href="#" aria-label="Test test">Back 12</a>
   </section>
 </body>
 </html>
