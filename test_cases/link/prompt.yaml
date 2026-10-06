@@ -1,0 +1,6 @@
+name: Link
+base_prompt: |
+  Build a link to return people to the previous page.
+common_requirements:
+  - The link should have a label of "Back"
+dimensions:

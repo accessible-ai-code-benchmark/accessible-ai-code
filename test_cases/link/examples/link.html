@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Link examples — Back</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; padding: 2rem; }
+    .example { margin: 1rem 0; }
+    .label { font-weight: 600; margin-bottom: .25rem; display:block; }
+    .broken { color: #a00; }
+  </style>
+</head>
+<body>
+  <h1>Back link examples</h1>
+
+  <section class="example">
+    <span class="label">Working: standard link with href</span>
+    <a href="javascript:history.back()">Back 1</a>
+  </section>
+
+  <section class="example">
+    <span class="label">Working: semantic link to a known previous page</span>
+    <a href="/previous-page.html">Back 2</a>
+  </section>
+
+  <section class="example">
+    <span class="label">Working: link labelled with SVG using an aria-label</span>
+    <a href="/previous-page.html" aria-label="Back 3">
+      <svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="25" cy="25" r="20" stroke="red" fill="none" stroke-width="5"/>
+      </svg>
+    </a>
+  </section>
+
+  <hr>
+
+  <h2>Purposefully broken examples</h2>
+
+  <section class="example broken">
+    <span class="label">Broken: anchor missing href (not a real link)</span>
+    <a>Back 4</a>
+  </section>
+
+  <section class="example broken">
+    <span class="label">Broken: custom element with role="link" but not focusable</span>
+    <div role="link">Back 5</div>
+  </section>
+
+  <section class="example broken">
+    <span class="label">Broken: custom element with role="link" and tabindex but no keyboard activation handling</span>
+    <div role="link" tabindex="0">Back 6</div>
+  </section>
+
+  <section class="example broken">
+    <span class="label">Broken: anchor with empty href (may be treated like a placeholder)</span>
+    <a href="">Back 7</a>
+  </section>
+
+  <section class="example broken">
+    <span class="label">Broken: link labelled with SVG but no accessible name</span>
+    <a href="#">
+      <svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="25" cy="25" r="20" stroke="red" fill="none" stroke-width="5"/>
+      </svg>
+    </a>
+  </section>
+
+  <section class="example broken">
+    <span class="label">Broken: visually hidden link text, not useful alone</span>
+    <a href="javascript:history.back()"><span style="position:absolute;left:-9999px;">Back 9</span></a>
+  </section>
+
+
+  <section class="example broken">
+    <span class="label">Broken: link's accessible name overridden with aria-label</span>
+    <a href="#" aria-label="Test test">
+      Back 9
+    </a>
+  </section>
+</body>
+</html>
