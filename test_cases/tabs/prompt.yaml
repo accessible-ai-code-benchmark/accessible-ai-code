@@ -1,0 +1,5 @@
+name: Tabbed Interface
+base_prompt: |
+  Build a tabbed interface, revealing information about different cities in the UK.
+common_requirements:
+dimensions:
